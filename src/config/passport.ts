@@ -1,14 +1,14 @@
 import passport from "passport";
-import passportLocal from "passport-local";
-import passportFacebook from "passport-facebook";
+import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as FacebookStrategy } from "passport-facebook";
+import { Strategy as KakaoStrategy } from "passport-kakao";
+import { OAuth2Strategy as GoogleStrategy } from "passport-google-oauth";
+
 import _ from "lodash";
 
 // import { User, UserType } from '../models/User';
 import { User, UserDocument } from "../models/User";
 import { Request, Response, NextFunction } from "express";
-
-const LocalStrategy = passportLocal.Strategy;
-const FacebookStrategy = passportFacebook.Strategy;
 
 passport.serializeUser<any, any>((user, done) => {
     done(undefined, user.id);
@@ -116,6 +116,75 @@ passport.use(new FacebookStrategy({
         });
     }
 }));
+
+passport.use(new KakaoStrategy({
+    clientID: process.env.KAKAO_ID,
+    clientSecret: "", // clientSecret을 사용하지 않는다면 넘기지 말거나 빈 스트링을 넘길 것
+    callbackURL: "/auth/kakao/callback"
+},
+    (accessToken, refreshToken, profile, done) => {
+        var _profile = profile._json;
+        User.findOne({ kakao: profile.id }, (err, existingUser) => {
+            if (err) { return done(err); }
+            if (existingUser) {
+                return done(undefined, existingUser);
+            }
+            User.findOne({ email: profile._json.email }, (err, existingEmailUser) => {
+                if (err) { return done(err); }
+                if (existingEmailUser) {
+                    done(err);
+                } else {
+                    console.log(profile);
+                    const user: any = new User();
+                    user.email = profile.id;
+                    user.kakao = profile.id;
+                    user.tokens.push({ kind: "kakao", accessToken });
+                    user.profile.name = profile.username;
+                    user.profile.gender = _profile.gender ?? "undefined";
+                    user.save((err: Error) => {
+                        done(err, user);
+                    });
+                }
+            });
+        });
+    }
+))
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_ID,
+    clientSecret: process.env.GOOGLE_SECRET,
+    callbackURL: "https://localhost:3001/auth/google/callback"
+},
+    function (accessToken, refreshToken, profile, done) {
+        var _profile = profile._json;
+        User.findOne({ google: profile.id }, (err, existingUser) => {
+            if (err) { return done(err); }
+            if (existingUser) {
+                console.error("existingUser");
+                return done(undefined, existingUser);
+            }
+            User.findOne({ email: _profile.email }, (err, existingEmailUser) => {
+                if (err) { return done(err); }
+                if (existingEmailUser) {
+                    console.error("existingEmailUser");
+                    done(err);
+                } else {
+                    console.log(profile);
+                    const user: any = new User();
+                    user.email = _profile.email;
+                    user.google = profile.id;
+                    user.tokens.push({ kind: "google", accessToken });
+                    user.profile.name = _profile.id;
+                    user.profile.gender = _profile.gender ?? "undefined";
+                    user.profile.picture = _profile.picture ?? "";
+                    user.save((err: Error) => {
+                        done(err, user);
+                    });
+                }
+            });
+        });
+    }
+));
 
 /**
  * Login Required middleware.

@@ -31,3 +31,15 @@ export const getFacebook = (req: Request, res: Response, next: NextFunction) => 
         });
     });
 };
+
+export const getKakao = (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as UserDocument;
+    const token = user.tokens.find((token: any) => token.kind === "kakao");
+    res.render("Kakao login");
+}
+
+export const getGoogle = (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as UserDocument;
+    const token = user.tokens.find((token: any) => token.kind === "google");
+    res.render("Google login");
+}

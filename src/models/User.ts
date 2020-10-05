@@ -9,6 +9,7 @@ export type UserDocument = mongoose.Document & {
     passwordResetExpires: Date;
 
     facebook: string;
+    kakao: string;
     tokens: AuthToken[];
 
     profile: {
@@ -37,6 +38,7 @@ const userSchema = new mongoose.Schema({
     passwordResetExpires: Date,
 
     facebook: String,
+    kakao: String,
     twitter: String,
     google: String,
     tokens: Array,
@@ -54,6 +56,7 @@ const userSchema = new mongoose.Schema({
  * Password hash middleware.
  */
 userSchema.pre("save", function save(next) {
+    console.log("save~!")
     const user = this as UserDocument;
     if (!user.isModified("password")) { return next(); }
     bcrypt.genSalt(10, (err, salt) => {

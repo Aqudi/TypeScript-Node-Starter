@@ -24,7 +24,8 @@
         "watch-node": "nodemon dist/server.js",
         "watch-sass": "node-sass -w src/public/css/main.scss dist/public/css/main.css",
         "watch-test": "npm run test -- --watchAll",
-        "watch-ts": "tsc -w"
+        "watch-ts": "tsc -w",
+        "dev": "nodemon src/server.ts"
     },
     "dependencies": {
         "async": "^3.1.0",
@@ -46,6 +47,8 @@
         "nodemailer": "^6.3.0",
         "passport": "^0.4.0",
         "passport-facebook": "^3.0.0",
+        "passport-google-oauth": "^2.0.0",
+        "passport-kakao": "^1.0.0",
         "passport-local": "^1.0.0",
         "pug": "^2.0.4",
         "winston": "^3.2.1"
@@ -74,6 +77,8 @@
         "@types/nodemailer": "^6.2.1",
         "@types/passport": "^1.0.1",
         "@types/passport-facebook": "^2.1.9",
+        "@types/passport-google-oauth": "^1.0.41",
+        "@types/passport-kakao": "^0.2.0",
         "@types/passport-local": "^1.0.33",
         "@types/pug": "^2.0.4",
         "@types/request": "^2.48.3",
@@ -89,10 +94,11 @@
         "jest": "^24.9.0",
         "node-sass": "^4.14.1",
         "nodemon": "^1.19.2",
+        "passport-google-oauth20": "^2.0.0",
         "shelljs": "^0.8.3",
         "supertest": "^4.0.2",
         "ts-jest": "^24.1.0",
-        "ts-node": "^8.4.1",
+        "ts-node": "^9.0.0",
         "typescript": "^3.6.3"
     }
 }

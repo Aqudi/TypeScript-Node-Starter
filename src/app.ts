@@ -4,6 +4,8 @@ import session from "express-session";
 import bodyParser from "body-parser";
 import lusca from "lusca";
 import mongo from "connect-mongo";
+import * as fs from 'fs';
+import * as https from 'https';
 import flash from "express-flash";
 import path from "path";
 import mongoose from "mongoose";
@@ -30,11 +32,22 @@ const app = express();
 const mongoUrl = MONGODB_URI;
 mongoose.Promise = bluebird;
 
-mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true } ).then(
+console.log("Connect to MongoDB")
+mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true }).then(
     () => { /** ready to use. The `mongoose.connect()` promise resolves to undefined. */ },
 ).catch(err => {
     console.log(`MongoDB connection error. Please make sure MongoDB is running. ${err}`);
     // process.exit();
+});
+console.log("Success!")
+
+var options = {
+    key: fs.readFileSync(process.env.SSL_KEY),
+    cert: fs.readFileSync(process.env.SSL_CERT)
+};
+
+https.createServer(options, app).listen(process.env.PORT2, function () {
+    console.log("Https server listening on port " + process.env.PORT2);
 });
 
 // Express configuration
@@ -65,13 +78,13 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
     // After successful login, redirect back to the intended page
     if (!req.user &&
-    req.path !== "/login" &&
-    req.path !== "/signup" &&
-    !req.path.match(/^\/auth/) &&
-    !req.path.match(/\./)) {
+        req.path !== "/login" &&
+        req.path !== "/signup" &&
+        !req.path.match(/^\/auth/) &&
+        !req.path.match(/\./)) {
         req.session.returnTo = req.path;
     } else if (req.user &&
-    req.path == "/account") {
+        req.path == "/account") {
         req.session.returnTo = req.path;
     }
     next();
@@ -107,12 +120,21 @@ app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userControl
  */
 app.get("/api", apiController.getApi);
 app.get("/api/facebook", passportConfig.isAuthenticated, passportConfig.isAuthorized, apiController.getFacebook);
+app.get("/api/kakao", passportConfig.isAuthenticated, passportConfig.isAuthorized, apiController.getKakao);
 
 /**
  * OAuth authentication routes. (Sign in)
  */
 app.get("/auth/facebook", passport.authenticate("facebook", { scope: ["email", "public_profile"] }));
-app.get("/auth/facebook/callback", passport.authenticate("facebook", { failureRedirect: "/login" }), (req, res) => {
+app.get("/auth/facebook/callback", passport.authenticate("facebook", { failureRedirect: "/login", failureFlash: true  }), (req, res) => {
+    res.redirect(req.session.returnTo || "/");
+});
+app.get("/auth/kakao", passport.authenticate("kakao"));
+app.get("/auth/kakao/callback", passport.authenticate("kakao", { failureRedirect: "/login", failureFlash: true  }), (req, res) => {
+    res.redirect(req.session.returnTo || "/");
+});
+app.get("/auth/google", passport.authenticate("google", { scope: ['openid', 'email'] }));
+app.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login", failureFlash: true  }), (req, res) => {
     res.redirect(req.session.returnTo || "/");
 });
 
